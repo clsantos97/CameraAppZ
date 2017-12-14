@@ -1,6 +1,8 @@
 package carlos.cameraappz;
 
 import android.Manifest;
+import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -48,10 +50,11 @@ public class MainActivity extends AppCompatActivity implements Button.OnClickLis
     @Override
     public void onClick(View view) {
 
-        Intent thumbnailIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (thumbnailIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(thumbnailIntent, THUMBNAIL_PICTURE);
-
+        if ((Button) view == btnThumb) {
+            Intent thumbnailIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            if (thumbnailIntent.resolveActivity(getPackageManager()) != null) {
+                startActivityForResult(thumbnailIntent, THUMBNAIL_PICTURE);
+            }
         } else if ((Button) view == btnSave) {
             dispatchTakePictureIntent();
         }
@@ -67,6 +70,8 @@ public class MainActivity extends AppCompatActivity implements Button.OnClickLis
                     Toast.LENGTH_SHORT);
             toast.setGravity(Gravity.CENTER, 0, 0);
             toast.show();
+            //galleryAddPic();
+            addImageToGallery(photoPath,this);
         }
     }
 
@@ -77,6 +82,8 @@ public class MainActivity extends AppCompatActivity implements Button.OnClickLis
         File image = File.createTempFile(imageFileName, ".jpg", storageDir);
 
         photoPath = "File saved: " + image.getAbsolutePath();
+
+        System.out.println(photoPath);
         return image;
     }
 
@@ -96,5 +103,26 @@ public class MainActivity extends AppCompatActivity implements Button.OnClickLis
             }
         }
     }
+
+    private void galleryAddPic(){
+        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        File f= new File(photoPath);
+        Uri contentUri = Uri.fromFile(f);
+        mediaScanIntent.setData(contentUri);
+        this.sendBroadcast(mediaScanIntent);
+
+    }
+
+    public static void addImageToGallery(final String filePath, final Context context) {
+
+        ContentValues values = new ContentValues();
+
+        values.put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis());
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+        values.put(MediaStore.MediaColumns.DATA, filePath);
+
+        context.getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+    }
+
 
 }
